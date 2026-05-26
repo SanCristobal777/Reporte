@@ -8,6 +8,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.example.reporte.model.Reporte;
 import com.example.reporte.model.SucursalDTO;
+import com.example.reporte.model.UsuarioDTO;
 import com.example.reporte.repository.ReporteRepository;
 
 import jakarta.transaction.Transactional;
@@ -50,22 +51,36 @@ public class ReporteService {
         return reporteRepository.findByTipo("STOCK_CRITICO");
     }
 
-    public Reporte generarReporte(Reporte reporte) {
-        try {
-            SucursalDTO sucursal = restTemplate.getForObject(
-                "http:localhost:8091/api/sucursales/buscarid" + reporte.getSucursalId(),
-                SucursalDTO.class
-            );
-            if (sucursal == null) {
-                return null;
-            }
-        } catch (Exception e) {
-        
+public Reporte generarReporte(Reporte reporte) {
+
+    // verifica sucursal en Envio
+    try {
+        SucursalDTO sucursal = restTemplate.getForObject(
+            "http://localhost:8091/api/sucursales/buscarid" + reporte.getSucursalId(),
+            SucursalDTO.class
+        );
+        if (sucursal == null) {
+            return null;
+        }
+    } catch (Exception e) {
+        return null;  // <- este return null debe estar AQUI dentro
+    }
+
+    // verifica usuario en Usuario
+    try {
+        UsuarioDTO usuario = restTemplate.getForObject(
+            "http://localhost:8098/api/usuarios/" + reporte.getDestinatarioId(),
+            UsuarioDTO.class
+        );
+        if (usuario == null) {
+            return null;
+        }
+    } catch (Exception e) {
         return null;
     }
 
-        return reporteRepository.save(reporte);
-    }
+    return reporteRepository.save(reporte);
+}
 
     public Reporte actualizarReporte(Long idReporte, Reporte reporte) {
         Reporte existente = reporteRepository.findById(idReporte).orElse(null);
